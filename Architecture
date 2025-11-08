@@ -1,0 +1,62 @@
+# 🧩 Scribble Sync – Architecture Documentation
+
+This document provides an overview of the system design, data flow, and major architectural decisions for **Scribble Sync**, a real-time collaborative drawing and chat platform built with **Node.js**, **Express**, and **Socket.IO**.
+
+---
+
+## 🧠 Data Flow Diagram
+
+   ┌──────────────┐
+   │   User A     │
+   │ (Canvas + UI)│
+   └──────┬───────┘
+          │ draw/chat event
+          ▼
+   ┌──────────────┐
+   │  Socket.IO   │
+   │   (client)   │
+   └──────┬───────┘
+          │
+    WebSocket message
+          │
+          ▼
+   ┌──────────────────┐
+   │  Node.js Server  │
+   │ (Express + IO)   │
+   └──────┬───────────┘
+          │ broadcast event
+          ▼
+   ┌──────────────┐
+   │   User B     │
+   │ (Canvas + UI)│
+   └──────────────┘
+
+Each user emits events (drawing strokes, chat messages, undo/redo actions) via **Socket.IO**, which the server broadcasts to all other connected clients in real-time.
+
+---
+
+## 🔌 WebSocket Protocol
+
+### **Message Types**
+
+| Event Name | Direction | Payload | Description |
+|-------------|------------|----------|-------------|
+| `draw` | client → server | `{ x, y, color, size, tool, userId }` | Sent while drawing |
+| `strokeEnd` | client → server | `{ strokeId }` | Marks completion of a stroke |
+| `undo` | client → server | `{ userId }` | Requests undo action |
+| `redo` | client → server | `{ userId }` | Requests redo action |
+| `chatMessage` | client ↔ server | `{ userId, message, timestamp }` | Chat message event |
+| `cursorMove` | client → server | `{ x, y, userId }` | Real-time cursor tracking |
+
+The server uses **Socket.IO’s broadcast** mechanism to emit these updates to all clients except the sender, ensuring consistent state across all connected canvases.
+
+---
+
+## 🔁 Undo / Redo Strategy
+
+Undo/redo are implemented **client-side** but triggered globally:
+
+- Each stroke drawn is saved in a local `history` stack:
+  ```js
+  let history = [];
+  let undone = [];
