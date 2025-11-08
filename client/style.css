@@ -1,0 +1,40 @@
+/* style.css */
+
+/* 1. Global Background */
+body {
+    /* Sets a light page background, complementing the Tailwind classes */
+    background-color: #f7f7f7; 
+}
+
+/* 2. Custom Cursor for Remote Users */
+/* The 'cursor' class is dynamically created and appended to the body by the JavaScript */
+.cursor {
+    /* Critical for positioning the cursor div accurately over the canvas */
+    position: absolute; 
+    
+    /* Size and shape of the cursor dot */
+    width: 12px;
+    height: 12px;
+    border-radius: 50%; 
+    
+    /* Make sure the cursor dot doesn't block clicks on the canvas underneath */
+    pointer-events: none; 
+    
+    /* Ensure it appears above the canvas and other elements */
+    z-index: 1000; 
+    
+    /* Give the cursor a border for better visibility on white backgrounds */
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+
+    /* Use a CSS transition for smooth movement (already in JS, but good practice here too) */
+    transition: transform 0.1s ease-out, opacity 0.1s ease-out; 
+}
+
+/* 3. Optional: Default Local Cursor Style */
+/* This changes the cursor when the user hovers over the canvas */
+#canvas {
+    /* If in editing mode, show a crosshair or pointer to indicate drawing is possible */
+    cursor: crosshair; 
+    /* The active drawing tool may override this in JavaScript */
+}

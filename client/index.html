@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>**Scribble Sync**</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Caveat', cursive;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding-top: 52px; 
+            background-color: #fef08a; /* Light yellow background */
+        }
+        
+        h1 {
+            font-family: 'Caveat', cursive;
+            font-weight: 700;
+            font-size: 3rem;
+            line-height: 1;
+        }
+
+        /* Active tool styling */
+        .active-tool {
+            background-color: #4f46e5 !important; 
+            color: white !important;
+            box-shadow: none !important; 
+            transform: none !important; 
+            border: 2px solid #4f46e5 !important; 
+        }
+        
+        /* Dropdown specific styles */
+        .mode-option:hover { background-color: #f3f4f6; }
+        .mode-option.selected { font-weight: bold; }
+        .mode-option.disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Chat Specific Styles */
+        #chatMessages {
+            height: 150px; /* Set a fixed height for chat at the bottom */
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* Cursor styles (Removed, but keeping the class for cleanliness if style.css is used) */
+        .cursor {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="top-nav" class="flex items-center justify-between w-full bg-indigo-700 shadow-xl px-6 py-2 fixed top-0 z-50">
+        
+        <div class="flex items-center gap-4">
+            
+            <div class="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-xl text-white font-bold transform rotate-3 shadow-md">
+                🎨
+            </div>
+            <span class="text-xl font-extrabold text-white tracking-wider font-inter">
+                **Scribble Sync**
+            </span>
+            
+            <div class="relative ml-4">
+                <button id="modeBtn" class="flex items-center gap-1 px-3 py-1 bg-white text-indigo-700 rounded-lg text-sm font-semibold shadow-md hover:bg-gray-100 transition">
+                    <span id="currentModeText">Editing</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                <div id="modeDropdownMenu" class="hidden absolute top-full mt-2 w-64 bg-white rounded-xl shadow-2xl overflow-hidden z-20 border border-gray-200">
+                    <div id="editMode" class="mode-option flex justify-between items-center p-3 cursor-pointer selected" data-mode="editing">
+                        <div><p class="font-bold text-gray-900">Editing</p><p class="text-xs text-gray-500">Make changes</p></div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <div id="commentMode" class="mode-option flex justify-between items-center p-3 cursor-pointer" data-mode="commenting">
+                        <div><p class="font-bold text-gray-900">Commenting</p><p class="text-xs text-gray-500">Add feedback</p></div>
+                    </div>
+                    <div id="viewMode" class="mode-option flex justify-between items-center p-3 cursor-pointer disabled" data-mode="viewing">
+                        <div><p class="font-bold text-gray-900">Viewing</p><p class="text-xs text-gray-500">Read-only</p></div>
+                    </div>
+                </div>
+            </div>
+            
+            </div>
+
+        <button id="shareBtn" class="flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 font-bold rounded-full shadow-lg transition hover:bg-gray-100 ml-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Share
+        </button>
+    </div>
+    
+    <div class="flex flex-col items-center justify-center pt-8 pb-8 w-full">
+        <h1 class="text-4xl font-black text-gray-900 tracking-tight">**Scribble Sync**</h1>
+        
+        <div id="nickname-form" class="flex items-center gap-3 bg-white p-4 rounded-full shadow-xl border-4 border-indigo-200 mt-4">
+            <label for="nicknameInput" class="text-lg font-bold text-gray-700 font-inter">Your Name:</label>
+            <input type="text" id="nicknameInput" placeholder="Enter your Nickname" class="px-4 py-2 border-2 border-indigo-300 rounded-full text-base focus:outline-none focus:ring-4 focus:ring-indigo-400/50 transition w-56" maxlength="12">
+        </div>
+    </div>
+    
+    <hr class="mx-auto max-w-7xl border-t border-gray-200 mb-5" />
+
+    <div id="toolbar" class="bg-white shadow-2xl rounded-3xl flex flex-wrap items-center gap-5 p-6 mb-5 mx-auto max-w-7xl">
+        
+        <button id="brushBtn" class="px-6 py-2.5 rounded-xl text-base font-semibold bg-gray-100 hover:bg-indigo-100 text-gray-700 transition active-tool">Brush</button>
+        <button id="pencilBtn" class="px-6 py-2.5 rounded-xl text-base font-semibold bg-gray-100 hover:bg-indigo-100 text-gray-700 transition">Pencil</button>
+        <button id="eraserBtn" class="px-6 py-2.5 rounded-xl text-base font-semibold bg-gray-100 hover:bg-indigo-100 text-gray-700 transition">Eraser</button>
+        
+        <div class="flex items-center gap-4 ml-8">
+            <label for="colorPicker" class="text-sm font-medium text-gray-600">Color:</label>
+            <input type="color" id="colorPicker" value="#000000" class="w-10 h-10 rounded-lg border-2 border-gray-300 p-0 cursor-pointer overflow-hidden shadow-inner">
+            
+            <label for="sizePicker" class="text-sm font-medium text-gray-600 ml-6">Size:</label>
+            <select id="sizePicker" class="px-5 py-2 rounded-xl text-base bg-white border border-gray-300 shadow-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                <option value="2">2px</option>
+                <option value="4" selected>4px</option>
+                <option value="6">6px</option>
+                <option value="8">8px</option>
+                <option value="12">12px</option>
+            </select>
+        </div>
+
+        <button id="downloadBtn" class="px-7 py-2.5 rounded-xl text-sm bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg shadow-blue-300/60 transition duration-200">Download</button>
+
+        <button id="clearCanvasBtn" class="px-7 py-2.5 rounded-xl text-sm bg-red-600 hover:bg-red-700 text-white font-bold shadow-lg shadow-red-300/60 transition duration-200">Clear All</button>
+
+        <button id="undoBtn" class="ml-auto px-7 py-2.5 rounded-xl text-sm bg-green-500 hover:bg-green-600 text-white font-bold shadow-lg shadow-green-300/60 transition duration-200">Undo</button>
+        <button id="redoBtn" class="px-7 py-2.5 rounded-xl text-sm bg-red-500 hover:bg-red-600 text-white font-bold shadow-lg shadow-red-300/60 transition duration-200">Redo</button>
+    </div>
+
+    <div id="user-list" class="flex gap-3 flex-wrap mx-auto max-w-7xl mb-6"></div>
+
+
+    <div id="canvas-wrapper" class="mx-auto max-w-7xl relative shadow-2xl rounded-3xl overflow-hidden border-8 border-white">
+        <canvas id="canvas" width="1000" height="600" class="border-4 border-indigo-200 rounded-2xl bg-white"></canvas>
+    </div>
+
+    <div id="chat-sidebar" class="w-full mx-auto max-w-7xl bg-white p-4 rounded-3xl shadow-2xl mt-5 mb-10">
+        <h3 class="text-lg font-extrabold text-indigo-700 mb-3 font-inter">💬 Group Chat</h3>
+        
+        <div id="chatMessages" class="bg-gray-50 p-3 mb-3 rounded-lg flex flex-col space-y-2 text-sm">
+            <p class="text-xs text-gray-500 text-center">Welcome! Start chatting below.</p>
+        </div>
+        
+        <form id="chatForm" class="flex gap-2">
+            <input type="text" id="chatInput" placeholder="Type a message..." class="flex-grow px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+            <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold hover:bg-indigo-700 transition">Send</button>
+        </form>
+    </div>
+
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:4000');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+
+        const brushBtn = document.getElementById('brushBtn');
+        const pencilBtn = document.getElementById('pencilBtn');
+        const eraserBtn = document.getElementById('eraserBtn');
+        const colorPicker = document.getElementById('colorPicker');
+        const sizePicker = document.getElementById('sizePicker');
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+        const userListDiv = document.getElementById('user-list');
+        const toolButtons = [brushBtn, pencilBtn, eraserBtn];
+
+        const nicknameInput = document.getElementById('nicknameInput');
+        // Removed: copyLinkBtn, whatsappShareBtn (buttons are removed from HTML)
+        const shareBtn = document.getElementById('shareBtn');
+        
+        const downloadBtn = document.getElementById('downloadBtn'); 
+        const clearCanvasBtn = document.getElementById('clearCanvasBtn'); 
+        
+        // NEW ELEMENTS (Mode Dropdown)
+        const modeBtn = document.getElementById('modeBtn');
+        const modeDropdownMenu = document.getElementById('modeDropdownMenu');
+        const currentModeText = document.getElementById('currentModeText');
+        const modeOptions = document.querySelectorAll('.mode-option');
+
+        // NEW CHAT ELEMENTS
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        const chatMessages = document.getElementById('chatMessages');
+
+        let userId = null;
+        let brushColor = colorPicker.value;
+        let brushSize = parseInt(sizePicker.value);
+        let tool = 'brush';
+        let isDrawing = false;
+        let currentStroke = [];
+        let redoStack = [];
+        let currentMode = 'editing'; // Initial collaboration mode
+
+        const canvasManager = {
+            history: [],
+            // cursors: {} has been logically removed
+            redrawAll() {
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                this.history.filter(s=>s.status!=='undone').forEach(s=>this.drawStroke(s));
+                // drawCursors() has been removed
+            },
+            drawStroke(stroke) {
+                if(!stroke.points.length) return;
+                ctx.strokeStyle = (stroke.tool==='eraser')?'#FFFFFF':stroke.color;
+                ctx.lineWidth = stroke.size;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                stroke.points.forEach(p=>ctx.lineTo(p.x,p.y));
+                ctx.stroke();
+            },
+            // drawCursors function has been removed
+        };
+
+        function setActiveToolButton(activeTool){
+            toolButtons.forEach(btn=>btn.classList.remove('active-tool'));
+            if(activeTool==='brush') brushBtn.classList.add('active-tool');
+            else if(activeTool==='pencil') pencilBtn.classList.add('active-tool');
+            else if(activeTool==='eraser') eraserBtn.classList.add('active-tool');
+        }
+
+        // --- COLLABORATION MODE LOGIC ---
+        function updateMode(newMode) {
+            if (newMode === 'viewing') {
+                alert("Viewing mode selected. Drawing is disabled.");
+                canvas.style.pointerEvents = 'none';
+            } else if (newMode === 'editing') {
+                alert("Editing mode selected. You can draw.");
+                canvas.style.pointerEvents = 'auto';
+            } else if (newMode === 'commenting') {
+                alert("Commenting mode selected. Drawing disabled. (Placeholder: Comment tool would activate here).");
+                canvas.style.pointerEvents = 'none';
+            }
+            
+            currentMode = newMode;
+            currentModeText.textContent = newMode.charAt(0).toUpperCase() + newMode.slice(1);
+            
+            // Visual feedback update
+            modeOptions.forEach(opt => {
+                opt.classList.remove('selected');
+                const checkIcon = opt.querySelector('svg:last-child');
+                if (checkIcon && checkIcon.parentNode === opt) checkIcon.remove();
+            });
+
+            const selectedOption = document.querySelector(`.mode-option[data-mode="${newMode}"]`);
+            if (selectedOption) {
+                selectedOption.classList.add('selected');
+                // Add checkmark icon to the selected option
+                const checkIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+                selectedOption.insertAdjacentHTML('beforeend', checkIconSvg);
+            }
+        }
+
+        modeBtn.onclick = () => {
+            modeDropdownMenu.classList.toggle('hidden');
+        };
+
+        modeOptions.forEach(option => {
+            option.onclick = () => {
+                const mode = option.getAttribute('data-mode');
+                if (!option.classList.contains('disabled')) {
+                    updateMode(mode);
+                    modeDropdownMenu.classList.add('hidden');
+                }
+            };
+        });
+        
+        // Hide dropdown if clicked outside
+        window.onclick = (event) => {
+            if (!event.target.closest('#modeBtn') && !event.target.closest('#modeDropdownMenu')) {
+                modeDropdownMenu.classList.add('hidden');
+            }
+        };
+        // --- END COLLABORATION MODE LOGIC ---
+
+
+        // --- AUTOMATIC NICKNAME UPDATE ---
+        function setNickname() {
+            const nickname = nicknameInput.value.trim();
+            if (nickname && userId && nickname !== userId) {
+                socket.emit('setNickname', nickname);
+            }
+        }
+        
+        nicknameInput.addEventListener('blur', setNickname);
+        
+        nicknameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                setNickname();
+                nicknameInput.blur();
+            }
+        });
+        // --- END AUTOMATIC NICKNAME UPDATE ---
+
+        // --- CANVAS CLEAR FUNCTIONALITY ---
+        clearCanvasBtn.onclick = () => {
+            const confirmed = confirm("WARNING: This will clear ALL drawings for EVERYONE. Are you sure you want to proceed?");
+            if (confirmed) {
+                socket.emit('clearCanvas');
+                canvasManager.history = [];
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                redoStack = [];
+            }
+        };
+        
+        socket.on('canvasCleared', () => {
+            canvasManager.history = [];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            redoStack = [];
+            alert("The canvas has been cleared by the host.");
+        });
+        // --- END CANVAS CLEAR FUNCTIONALITY ---
+
+        // --- DOWNLOAD FUNCTIONALITY ---
+        downloadBtn.onclick = () => {
+            const dataURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = `scribble_sync_${new Date().toISOString()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+        // --- END DOWNLOAD FUNCTIONALITY ---
+
+        // --- SHARE FUNCTIONALITY ---
+        const shareUrl = window.location.href;
+
+        shareBtn.onclick = () => {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Scribble Sync Collaboration',
+                    url: shareUrl,
+                }).catch((error) => console.log('Error sharing', error));
+            } else {
+                alert(`Share URL: ${shareUrl}`);
+            }
+        };
+        // --- END SHARE FUNCTIONALITY ---
+
+        // --- CHAT LOGIC ---
+        function appendMessage(user, color, message, isSelf = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${isSelf ? 'justify-end' : 'justify-start'} max-w-full`;
+            
+            const contentSpan = document.createElement('span');
+            contentSpan.className = `px-3 py-1.5 rounded-xl text-xs sm:text-sm shadow break-words transition duration-300`;
+            
+            const userSpan = document.createElement('span');
+            userSpan.textContent = isSelf ? 'You' : user;
+            userSpan.className = `font-bold mr-1 ${isSelf ? 'text-gray-900' : 'text-indigo-600'}`;
+            userSpan.style.color = isSelf ? '' : color; 
+            
+            const textNode = document.createTextNode(message);
+            
+            contentSpan.appendChild(userSpan);
+            contentSpan.appendChild(textNode);
+            
+            contentSpan.style.backgroundColor = isSelf ? '#e0f2f1' : '#fff'; 
+            
+            messageDiv.appendChild(contentSpan);
+            chatMessages.appendChild(messageDiv);
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        chatForm.onsubmit = (e) => {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            if (message && userId) {
+                socket.emit('chatMessage', { message, userId, color: brushColor });
+                appendMessage(userId, brushColor, message, true); 
+                chatInput.value = ''; 
+            }
+        };
+
+        socket.on('chatMessage', (data) => {
+            if (data.userId !== userId) {
+                appendMessage(data.userId, data.color, data.message, false);
+            }
+        });
+        // --- END CHAT LOGIC ---
+
+
+        // Toolbar events
+        brushBtn.onclick = ()=>{ if (currentMode !== 'editing') return alert("Switch to Editing Mode to draw."); tool='brush'; brushSize=parseInt(sizePicker.value); setActiveToolButton(tool); };
+        pencilBtn.onclick = ()=>{ if (currentMode !== 'editing') return alert("Switch to Editing Mode to draw."); tool='pencil'; brushSize=2; setActiveToolButton(tool); };
+        eraserBtn.onclick = ()=>{ if (currentMode !== 'editing') return alert("Switch to Editing Mode to draw."); tool='eraser'; brushSize=parseInt(sizePicker.value); setActiveToolButton(tool); };
+        colorPicker.onchange = e=>brushColor=e.target.value;
+        sizePicker.onchange = e=>{ if(tool!=='pencil') brushSize=parseInt(e.target.value); };
+
+        // Socket handlers
+        const userColors={};
+        socket.on('assignUserId', ({userId:id,color})=>{
+            userId=id;
+            brushColor=color;
+            colorPicker.value = color;
+            nicknameInput.value = id;
+        });
+
+        socket.on('updateUsers', users=>{
+            userListDiv.innerHTML='';
+            users.forEach(u=>{
+                userColors[u.userId]=u.color;
+
+                const userCard = document.createElement('div');
+                userCard.className = "user-badge flex items-center gap-2 px-4 py-1.5 rounded-full border-2 shadow-md bg-white text-sm font-semibold transition duration-200 ease-in-out cursor-pointer";
+                userCard.style.borderColor = u.color;
+                userCard.style.color = u.color;
+
+                const dot = document.createElement('div');
+                dot.className="w-3 h-3 rounded-full shadow-inner";
+                dot.style.backgroundColor=u.color;
+
+                const name = document.createElement('span');
+                name.textContent=u.userId;
+
+                userCard.appendChild(dot);
+                userCard.appendChild(name);
+
+                userListDiv.appendChild(userCard);
+            });
+        });
+
+        socket.on('canvasState', state=>{
+            canvasManager.history=[];
+            Object.values(state).forEach(userStrokes=>userStrokes.forEach(s=>canvasManager.history.push(s)));
+            canvasManager.redrawAll();
+        });
+        socket.on('stroke', ({userId:uId, stroke})=>{
+            canvasManager.history.push(stroke);
+            canvasManager.redrawAll();
+        });
+        socket.on('canvasOperation', ({type, stroke, strokeId})=>{
+            if(type==='undo'){
+                const s=canvasManager.history.find(s=>s.id===strokeId);
+                if(s) s.status='undone';
+            } else if(type==='redo' && stroke){
+                canvasManager.history.push(stroke);
+            }
+            canvasManager.redrawAll();
+        });
+        socket.on('undoFailed', msg => console.warn('[UNDO FAILED]', msg));
+
+        // Drawing events: Only allow if mode is 'editing'
+        canvas.addEventListener('mousedown', e=>{
+            if (currentMode !== 'editing') return; 
+            isDrawing=true;
+            currentStroke=[{x:e.offsetX,y:e.offsetY}];
+        });
+        canvas.addEventListener('mousemove', e=>{
+            if(!isDrawing || currentMode !== 'editing') return;
+            const point={x:e.offsetX,y:e.offsetY};
+            if(currentStroke.length>0){
+                ctx.strokeStyle=(tool==='eraser')?'#FFFFFF':brushColor;
+                ctx.lineWidth=brushSize;
+                ctx.lineCap='round';
+                ctx.lineJoin='round';
+                ctx.beginPath();
+                ctx.moveTo(currentStroke[currentStroke.length-1].x,currentStroke[currentStroke.length-1].y);
+                ctx.lineTo(point.x,point.y);
+                ctx.stroke();
+            }
+            currentStroke.push(point);
+            // Removed: socket.emit('cursorMove',{x:e.offsetX,y:e.offsetY});
+        });
+        canvas.addEventListener('mouseup', ()=>{
+            if(!isDrawing || currentMode !== 'editing') return;
+            isDrawing=false;
+            const strokeData={
+                id:crypto.randomUUID(),
+                color:brushColor,
+                size:brushSize,
+                points:currentStroke,
+                status:'active',
+                tool,
+                userId
+            };
+            canvasManager.history.push(strokeData);
+            socket.emit('stroke',{userId, stroke:strokeData});
+            currentStroke=[];
+            redoStack=[];
+        });
+        canvas.addEventListener('mouseleave', ()=>{ if(isDrawing) canvas.dispatchEvent(new Event('mouseup')); });
+
+        // Undo/Redo: Only allow if mode is 'editing'
+        undoBtn.onclick=()=>{
+            if (currentMode !== 'editing') return alert("Switch to Editing Mode to Undo.");
+            const lastActive=canvasManager.history.slice().reverse().find(s=>s.status==='active' && s.userId===userId);
+            if(lastActive) redoStack.push(lastActive);
+            socket.emit('requestUndo',{userId});
+        };
+        redoBtn.onclick=()=>{
+            if (currentMode !== 'editing') return alert("Switch to Editing Mode to Redo.");
+            if(redoStack.length===0) return;
+            const stroke=redoStack.pop();
+            stroke.status='active';
+            canvasManager.history.push(stroke);
+            socket.emit('stroke',{userId, stroke});
+            canvasManager.redrawAll();
+        };
+
+        window.onload=()=>{
+            setActiveToolButton(tool);
+            updateMode('editing'); // Ensure initial setup is correct
+        }
+    </script>
+</body>
+</html>
